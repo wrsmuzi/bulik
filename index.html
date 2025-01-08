@@ -1,0 +1,586 @@
+<!--
+
+
+   <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Info</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 50px;
+            text-align: center;
+        }
+        input[type="text"], input[type="number"] {
+            padding: 10px;
+            font-size: 16px;
+            width: 300px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin-left: 10px;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Product Information</h1>
+
+    <p>Enter the product ID to see its details:</p>
+    <input type="text" id="twitId" placeholder="Enter product ID">
+    <button onclick="fetchTwit()">Submit</button>
+
+    <div id="result"></div>
+
+    <hr>
+
+    <h2>Add New Product</h2>
+    <p>Enter product details to add it to the database:</p>
+    <input type="text" id="productName" placeholder="Product Name">
+    <br>
+    <input type="text" id="productCategory" placeholder="Product Category">
+    <br>
+    <input type="number" id="productPrice" placeholder="Unit Price">
+    <br>
+    <button onclick="addProduct()">Add Product</button>
+
+    <div id="addResult"></div>
+    <div>
+        <h3>Update Product Price</h3>
+        <label for="updateProductId">Product ID:</label>
+        <input type="number" id="updateProductId" placeholder="Enter Product ID" />
+        <label for="updateProductPrice">New Price:</label>
+        <input type="number" id="updateProductPrice" placeholder="Enter New Price" step="0.01" />
+        <button onclick="updatePrice()">Update Price</button>
+        <div id="updateResult"></div>
+    </div>
+    
+
+
+    <div>
+        <h3>Delete Product</h3>
+        <label for="deleteProductId">Product ID:</label>
+        <input type="number" id="deleteProductId" placeholder="Enter Product ID" />
+        <label for="deleteProductName">Product Name:</label>
+        <input type="text" id="deleteProductName" placeholder="Enter Product Name" />
+        <button onclick="deleteProduct()">Delete Product</button>
+        <div id="deleteResult"></div>
+    </div>
+    
+
+
+
+
+    <script>
+   async function fetchTwit() {
+    const id = document.getElementById('twitId').value;
+    const resultDiv = document.getElementById('result');
+
+    if (!id) {
+        resultDiv.textContent = 'Please enter an ID.';
+        return;
+    }
+
+    try {
+        const response = await fetch('/twits', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `id=${id}`,
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            resultDiv.textContent = errorData.message || 'An error occurred.';
+            return;
+        }
+
+        const data = await response.json();
+        resultDiv.innerHTML = `<strong>Product Name:</strong> ${data.product_name}
+        <strong>Product Category:</strong> ${data.category}<br><strong>Price:</strong> $${data.unit_price}`;
+    } catch (error) {
+        resultDiv.textContent = 'Failed to fetch product information. Please try again.';
+    }
+}
+
+
+        async function addProduct() {
+            const name = document.getElementById('productName').value;
+            const category = document.getElementById('productCategory').value;
+            const price = document.getElementById('productPrice').value;
+            const addResultDiv = document.getElementById('addResult');
+
+            if (!name || !category || !price) {
+                addResultDiv.textContent = 'Please fill in all fields.';
+                return;
+            }
+
+            try {
+                const response = await fetch('/twits/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ product_name: name, category: category, unit_price: price }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    addResultDiv.textContent = errorData.message || 'An error occurred.';
+                    return;
+                }
+
+                const data = await response.json();
+                addResultDiv.textContent = data.message || 'Product added successfully.';
+            } catch (error) {
+                addResultDiv.textContent = 'Failed to add product. Please try again.';
+            }
+            console.log({ product_name: name, category: category, unit_price: price });
+
+        }
+
+
+
+
+
+
+
+        async function updatePrice() {
+    const productId = document.getElementById('updateProductId').value;
+    const newPrice = parseFloat(document.getElementById('updateProductPrice').value);
+    const updateResultDiv = document.getElementById('updateResult');
+
+
+    if (!productId || isNaN(newPrice)) {
+        updateResultDiv.textContent = 'Please provide a valid Product ID and new price.';
+        return;
+    }
+
+    try {
+        // Надсилання запиту на сервер
+        const response = await fetch('/twits', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ product_id: productId, unit_price: newPrice }),
+        });
+
+        console.log('Response status:', response.status); // Лог статусу відповіді
+
+        // Обробка відповіді
+        const data = await response.json();
+
+        if (response.ok) {
+            console.log('Success response:', data); // Лог успішної відповіді
+            updateResultDiv.textContent = `Price updated successfully for product ID ${productId}.`;
+        } else {
+            console.log('Error response:', data); // Лог помилкової відповіді
+            updateResultDiv.textContent = data.message || 'An error occurred while updating the price.';
+        }
+    } catch (error) {
+        console.error('Fetch error:', error); // Лог помилки
+        updateResultDiv.textContent = 'Failed to update price. Please try again.';
+    }
+
+    console.log('Request payload:', { product_id: productId, unit_price: newPrice }); 
+    
+    // Лог даних запиту
+
+
+    console.log('Request payload:', { product_id: productId, unit_price: newPrice });
+
+
+}
+      
+
+
+
+
+
+
+
+
+
+async function deleteProduct() {
+    const productId = document.getElementById('deleteProductId').value;
+    const productName = document.getElementById('deleteProductName').value;
+    const deleteResultDiv = document.getElementById('deleteResult');
+
+    if (!productId || !productName) {
+        deleteResultDiv.textContent = 'Please provide both Product ID and Product Name.';
+        return;
+    }
+
+    try {
+        const response = await fetch('/twits', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ product_id: productId, product_name: productName }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            deleteResultDiv.textContent = `Product with ID ${productId} and name "${productName}" deleted successfully.`;
+        } else {
+            deleteResultDiv.textContent = data.message || 'An error occurred while deleting the product.';
+        }
+    } catch (error) {
+        deleteResultDiv.textContent = 'Failed to delete product. Please try again.';
+    }
+}
+
+
+
+    </script>
+</body>
+</html> 
+
+-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Info</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 50px;
+            text-align: center;
+        }
+        input[type="text"], input[type="number"] {
+            padding: 10px;
+            font-size: 18px;
+            width: 300px;
+            margin-bottom: 10px;
+            background-color: rgb(238, 238, 238);
+        }
+h1,h2{
+    color:rgb(255, 253, 253);
+    text-transform: uppercase;
+    font-weight: 800;
+    
+}
+
+
+        button {
+            padding: 10px 20px;
+            font-size: 19px;
+            margin-left: 10px;
+            background-color: rgb(178, 178, 178);
+            color: black;
+            font-weight: 800;
+            text-transform: uppercase;
+            transition-duration: 0.7s;
+        }
+        button:hover{
+            background-color: black;
+            color:rgb(211, 211, 211);
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 20px;
+        color:white;
+        background-color: black;
+        padding: 10px;
+        }
+#addResult{
+    margin-top: 20px;
+            font-size: 20px;
+        color:white;
+        background-color: black;
+        padding: 10px;
+}
+        .wrapper{
+            background-color: rgb(96, 96, 96);
+            box-shadow: 1px 1px 1px black; 
+     padding: 20px 0px 20px 0px;
+            min-height: 620px;
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+
+    <h1> User Information</h1>
+
+    <p>Enter the  Special User ID to see its details:</p>
+    <input type="text" id="twitId" placeholder="Enter Special User ID">
+    <button onclick="fetchTwit()">Submit</button>
+
+    <div id="result"></div>
+
+    <hr>
+
+    <h2>Menu Registr</h2>
+    <p>Enter your information to add it to the database:</p>
+    <input type="text" id="Name" placeholder="Full name">
+    <br>
+    <input type="text" id="email" placeholder="Email">
+    <input type="text" id="password" placeholder="Password">
+    <br>
+    <input type="number" id="number" placeholder="Number Phone">
+    <input type="number" id="number1" placeholder="Special User Id">
+    <br>
+    <button onclick="addProduct()">Send Information</button>
+
+    <div id="addResult"></div>
+
+
+
+    <hr>
+<h2>Get All Users</h2>
+
+
+
+<button id="toggleButton" onclick="fetchAllProducts()">Show Users</button>
+<div id="allResults"></div>
+
+
+</div>
+
+    <script>
+        async function fetchTwit() {
+            const id = document.getElementById('twitId').value;
+            const resultDiv = document.getElementById('result');
+    
+            if (!id) {
+                resultDiv.textContent = 'Please enter Special ID User.';
+                return;
+            }
+    
+            try {
+                const response = await fetch('/twits', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id }),
+                });
+    
+                const data = await response.json();
+    
+                if (!response.ok) {
+                    resultDiv.textContent = data.message || 'An error occurred.';
+                    return;
+                }
+    
+                resultDiv.innerHTML = `
+                    <strong>User Full Name:</strong> ${data.name} <br>
+                    <strong>Email:</strong> ${data.email} <br>
+                    <strong>Password:</strong> ${data.password} <br>
+                    <strong>Mobile Number:</strong> ${data.number}`;
+            } catch (error) {
+                resultDiv.textContent = 'Failed to fetch user information. Please try again.';
+            }
+        }
+    
+
+
+
+
+
+
+        async function addProduct() {
+            const name = document.getElementById('Name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const numberPhone = document.getElementById('number').value;
+            const id = document.getElementById('number1').value;
+            const addResultDiv = document.getElementById('addResult');
+    
+            if (!name || !email || !password || !numberPhone || !id) {
+                addResultDiv.textContent = 'Please fill in all fields.';
+                return;
+            }
+    
+            try {
+                const response = await fetch('/twits/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password, number: numberPhone, user_id: id }),
+                });
+    
+                const data = await response.json();
+    
+                if (!response.ok) {
+                    addResultDiv.textContent = data.message || 'An error occurred.';
+                    return;
+                }
+    
+                addResultDiv.textContent = data.message || 'Information sent successfully.';
+            } catch (error) {
+                addResultDiv.textContent = 'Failed to send info. Please try again.';
+            }
+        } 
+
+
+
+
+
+
+
+
+        let isVisible = false; // Змінна для збереження стану видимості таблиці
+
+async function fetchAllProducts() {
+    const allResultsDiv = document.getElementById('allResults');
+    const button = document.getElementById('toggleButton');
+    
+    if (isVisible) {
+        // Якщо список вже видно, просто приховуємо його
+        allResultsDiv.style.display = 'none';
+        button.textContent = 'Show Users';
+        isVisible = false;
+        return;
+    }
+
+    allResultsDiv.textContent = 'Loading...';
+
+    try {
+        // Викликаємо API для отримання всіх продуктів
+        const response = await fetch('/twits/all', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            allResultsDiv.textContent = data.message || 'An error occurred.';
+            return;
+        }
+
+        // Очищаємо попередній контент
+        allResultsDiv.innerHTML = '<h3>All Users:</h3>';
+
+        // Створюємо таблицю для відображення даних
+        const table = document.createElement('table');
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        table.style.margin = '10px 0';
+        table.innerHTML = `
+            <tr style="background-color: #444; color: white;">
+                <th style="border: 1px solid rgb(211, 211, 211); padding: 8px;">Email</th>
+                <th style="border: 1px solid white ; padding: 8px;">Full Name</th>
+                <th style="border: 1px solid rgb(211, 211, 211); padding: 8px;">Password</th>
+                <th style="border: 1px solid white; padding: 8px;">Phone</th>
+                <th style="border: 1px solid white; padding: 8px;">Special User ID</th>
+            </tr>
+        `;
+
+        // Перебираємо дані користувачів і додаємо їх в таблицю
+        data.forEach(user => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td style="border: 1px solid red; padding: 8px;">${user.email}</td>
+                <td style="border: 1px solid red; padding: 8px;">${user.name}</td>
+                <td style="border: 1px solid red; padding: 8px;">${user.password}</td>
+                <td style="border: 1px solid red; padding: 8px;">${user.number}</td>
+                <td style="border: 1px solid red; padding: 8px;">${user.user_id}</td>
+            `;
+            table.appendChild(row);
+        });
+
+        allResultsDiv.appendChild(table);
+        allResultsDiv.style.display = 'block'; // Показуємо результати після запиту
+        button.textContent = 'Hide Users'; // Змінюємо текст кнопки
+        isVisible = true; // Встановлюємо, що дані видно
+    } catch (error) {
+        // Якщо сталася помилка
+        allResultsDiv.textContent = 'Failed to fetch data. Please try again.';
+    }
+}
+
+
+
+
+
+
+
+
+/*
+     async function fetchAllProducts() {}
+        const allResultsDiv = document.getElementById('allResults');
+        allResultsDiv.textContent = 'Loading...';
+
+        try {
+            const response = await fetch('/twits/all', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                allResultsDiv.textContent = data.message || 'An error occurred.';
+                return;
+            }
+
+            // Clear the previous content
+            allResultsDiv.innerHTML = '<h3>All Users:</h3>';
+
+            // Create a table to display data
+            const table = document.createElement('table');
+            table.style.width = '100%';
+            table.style.borderCollapse = 'collapse';
+            table.style.margin = '10px 0';
+            table.innerHTML = `
+                <tr style="background-color: #444; color: white;">
+                    <th style="border: 1px solid rgb(211, 211, 211); padding: 8px;">Email</th>
+                    <th style="border: 1px solid white ; padding: 8px;">Full Name</th>
+                    <th style="border: 1px solid rgb(211, 211, 211); padding: 8px;">Password</th>
+                    <th style="border: 1px solid white; padding: 8px;">Phone</th>
+                    <th style="border: 1px solid white; padding: 8px;">Special User ID</th>
+                </tr>
+            `;
+
+            data.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="border: 1px solid red; padding: 8px;">${user.email}</td>
+                    <td style="border: 1px solid red; padding: 8px;">${user.name}</td>
+                    <td style="border: 1px solid red; padding: 8px;">${user.password}</td>
+                    <td style="border: 1px solid red; padding: 8px;">${user.number}</td>
+                    <td style="border: 1px solid red; padding: 8px;">${user.user_id}</td>
+                `;
+                table.appendChild(row);
+            });
+
+            allResultsDiv.appendChild(table);
+        } catch (error) {
+            allResultsDiv.textContent = 'Failed to fetch data. Please try again.';
+        }*/
+    
+    </script>
+    
+</body>
+</html> 
